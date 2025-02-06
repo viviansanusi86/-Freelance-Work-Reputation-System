@@ -61,3 +61,6 @@ describe("freelance reputation system", () => {
         expect(duplicateReview.result).toBeErr(Cl.uint(102)); // ERR-ALREADY-REVIEWED
     });
 });
+
+
+// new test
