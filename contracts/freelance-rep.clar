@@ -634,3 +634,118 @@
         ))
     )
 )
+
+
+
+(define-map rate-cards
+    {freelancer: principal, period-id: uint}
+    {
+        hourly-rate: uint,
+        currency: (string-ascii 3),
+        effective-from: uint,
+        specialization: (string-utf8 50)
+    }
+)
+
+(define-map freelancer-rate-counters
+    principal
+    {period-count: uint}
+)
+
+(define-public (set-rate-card (hourly-rate uint) 
+                             (currency (string-ascii 3))
+                             (specialization (string-utf8 50)))
+    (let
+        (
+            (freelancer tx-sender)
+            (counter (default-to {period-count: u0} 
+                    (map-get? freelancer-rate-counters freelancer)))
+            (period-id (get period-count counter))
+        )
+        (map-set freelancer-rate-counters freelancer
+            {period-count: (+ period-id u1)}
+        )
+        (ok (map-set rate-cards 
+            {freelancer: freelancer, period-id: period-id}
+            {
+                hourly-rate: hourly-rate,
+                currency: currency,
+                effective-from: stacks-block-height,
+                specialization: specialization
+            }
+        ))
+    )
+)
+
+(define-read-only (get-current-rate (freelancer principal))
+    (let
+        (
+            (counter (default-to {period-count: u0} 
+                    (map-get? freelancer-rate-counters freelancer)))
+            (latest-period (- (get period-count counter) u1))
+        )
+        (ok (map-get? rate-cards 
+            {freelancer: freelancer, period-id: latest-period}))
+    )
+)
+
+
+(define-map escrow-payments
+    {project-id: uint, milestone-id: uint}
+    {
+        amount: uint,
+        deposited-at: uint,
+        released: bool,
+        client: principal,
+        freelancer: principal
+    }
+)
+
+(define-public (deposit-escrow (project-id uint) 
+                              (milestone-id uint)
+                              (amount uint))
+    (let
+        (
+            (project (unwrap! (map-get? projects 
+                    {project-id: project-id}) (err u110)))
+        )
+        (asserts! (is-eq tx-sender (get client project)) 
+                 ERR-NOT-AUTHORIZED)
+        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+        (ok (map-set escrow-payments 
+            {project-id: project-id, milestone-id: milestone-id}
+            {
+                amount: amount,
+                deposited-at: stacks-block-height,
+                released: false,
+                client: (get client project),
+                freelancer: (get freelancer project)
+            }
+        ))
+    )
+)
+
+(define-public (release-escrow (project-id uint) (milestone-id uint))
+    (let
+        (
+            (escrow (unwrap! (map-get? escrow-payments 
+                    {project-id: project-id, 
+                     milestone-id: milestone-id}) (err u111)))
+            (milestone (unwrap! (map-get? milestones 
+                    {project-id: project-id, 
+                     milestone-id: milestone-id}) (err u112)))
+        )
+        (asserts! (is-eq tx-sender (get client escrow)) 
+                 ERR-NOT-AUTHORIZED)
+        (asserts! (get completed milestone) (err u113))
+        (asserts! (not (get released escrow)) (err u114))
+        (try! (as-contract (stx-transfer? 
+               (get amount escrow) 
+               tx-sender 
+               (get freelancer escrow))))
+        (ok (map-set escrow-payments 
+            {project-id: project-id, milestone-id: milestone-id}
+            (merge escrow {released: true})
+        ))
+    )
+)
