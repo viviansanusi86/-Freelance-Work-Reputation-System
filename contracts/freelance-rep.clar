@@ -749,3 +749,94 @@
         ))
     )
 )
+
+
+(define-map skill-last-activity
+    {freelancer: principal, skill: (string-utf8 50)}
+    {
+        last-active: uint,
+        original-score: uint,
+        current-score: uint
+    }
+)
+
+(define-constant DECAY-PERIOD u52560)
+(define-constant DECAY-RATE u10)
+
+(define-public (update-skill-activity (skill (string-utf8 50)))
+    (let
+        (
+            (current-activity (default-to 
+                {last-active: u0, original-score: u0, current-score: u0}
+                (map-get? skill-last-activity {freelancer: tx-sender, skill: skill})))
+        )
+        (ok (map-set skill-last-activity 
+            {freelancer: tx-sender, skill: skill}
+            {
+                last-active: stacks-block-height,
+                original-score: (get current-score current-activity),
+                current-score: (get current-score current-activity)
+            }
+        ))
+    )
+)
+
+(define-read-only (get-decayed-skill-score (freelancer principal) (skill (string-utf8 50)))
+    (let
+        (
+            (activity-data (unwrap! (map-get? skill-last-activity 
+                {freelancer: freelancer, skill: skill}) (err u200)))
+            (blocks-passed (- stacks-block-height (get last-active activity-data)))
+            (decay-cycles (/ blocks-passed DECAY-PERIOD))
+            (decay-amount (* decay-cycles DECAY-RATE))
+        )
+        (ok (- (get original-score activity-data) decay-amount))
+    )
+)
+
+
+(define-map collaborations
+    {team-id: uint}
+    {
+        members: (list 5 principal),
+        project-count: uint,
+        team-rating: uint,
+        active: bool
+    }
+)
+
+(define-data-var team-counter uint u0)
+
+(define-public (create-team (members (list 5 principal)))
+    (let
+        (
+            (team-id (var-get team-counter))
+        )
+        (var-set team-counter (+ team-id u1))
+        (ok (map-set collaborations
+            {team-id: team-id}
+            {
+                members: members,
+                project-count: u0,
+                team-rating: u0,
+                active: true
+            }
+        ))
+    )
+)
+
+(define-public (add-team-project (team-id uint))
+    (let
+        (
+            (team (unwrap! (map-get? collaborations {team-id: team-id}) (err u300)))
+            (members (get members team))
+        )
+        (asserts! (is-some (index-of members tx-sender)) (err u301))
+        (ok (map-set collaborations
+            {team-id: team-id}
+            (merge team {
+                project-count: (+ (get project-count team) u1)
+            })
+        ))
+    )
+)
