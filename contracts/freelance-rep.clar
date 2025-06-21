@@ -840,3 +840,41 @@
         ))
     )
 )
+
+(define-public (rate-team (team-id uint) (rating uint))
+    (let
+        (
+            (team (unwrap! (map-get? collaborations {team-id: team-id}) (err u302)))
+        )
+        (asserts! (and (>= rating u1) (<= rating u5)) ERR-INVALID-RATING)
+        (ok (map-set collaborations
+            {team-id: team-id}
+            (merge team {
+                team-rating: (+ (get team-rating team) rating)
+            })
+        ))
+    )
+)
+
+(define-read-only (get-team-details (team-id uint))
+    (ok (map-get? collaborations {team-id: team-id}))
+)
+
+(define-read-only (get-team-members (team-id uint))
+    (let
+        (
+            (team (unwrap! (map-get? collaborations {team-id: team-id}) (err u303)))
+        )
+        (ok (get members team))
+    )
+)
+
+(define-read-only (get-team-project-count (team-id uint))
+    (let
+        (
+            (team (unwrap! (map-get? collaborations {team-id: team-id}) (err u304)))
+        )
+        (ok (get project-count team))
+    )
+)
+
