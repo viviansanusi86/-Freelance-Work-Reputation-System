@@ -9,6 +9,27 @@ requirements = []
 path = 'contracts/freelance-rep.clar'
 clarity_version = 3
 epoch = 3.1
+
+[contracts.smart-matching]
+path = 'contracts/smart-matching.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.dynamic-pricing]
+path = 'contracts/dynamic-pricing.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.skill-endorsements]
+path = 'contracts/skill-endorsements.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.milestone-payment-automation]
+path = 'contracts/milestone-payment-automation.clar'
+clarity_version = 3
+epoch = 3.1
+
 [repl.analysis]
 passes = ['check_checker']
 
