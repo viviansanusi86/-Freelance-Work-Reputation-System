@@ -60,6 +60,11 @@ plan:
             path: "contracts\\freelance-rep.clar"
             clarity-version: 3
         - emulated-contract-publish:
+            contract-name: milestone-payment-automation
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\milestone-payment-automation.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: skill-endorsements
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: "contracts\\skill-endorsements.clar"

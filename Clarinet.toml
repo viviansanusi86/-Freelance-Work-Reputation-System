@@ -25,6 +25,11 @@ path = 'contracts/skill-endorsements.clar'
 clarity_version = 3
 epoch = 3.1
 
+[contracts.milestone-payment-automation]
+path = 'contracts/milestone-payment-automation.clar'
+clarity_version = 3
+epoch = 3.1
+
 [repl.analysis]
 passes = ['check_checker']
 
